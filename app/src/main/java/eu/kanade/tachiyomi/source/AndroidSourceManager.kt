@@ -18,6 +18,7 @@ import kotlinx.coroutines.runBlocking
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.domain.source.repository.StubSourceRepository
 import tachiyomi.domain.source.service.SourceManager
+import mihon.source.libgen.LibgenSource
 import tachiyomi.source.local.LocalSource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -49,14 +50,16 @@ class AndroidSourceManager(
         scope.launch {
             extensionManager.installedExtensionsFlow
                 .collectLatest { extensions ->
-                    val mutableMap = ConcurrentHashMap<Long, Source>(
-                        mapOf(
-                            LocalSource.ID to LocalSource(
-                                context,
-                                Injekt.get(),
-                                Injekt.get(),
-                            ),
+                    val builtInSources = listOf<Source>(
+                        LocalSource(
+                            context,
+                            Injekt.get(),
+                            Injekt.get(),
                         ),
+                        LibgenSource(),
+                    )
+                    val mutableMap = ConcurrentHashMap<Long, Source>(
+                        builtInSources.associateBy(Source::id),
                     )
                     extensions.forEach { extension ->
                         extension.sources.forEach {
